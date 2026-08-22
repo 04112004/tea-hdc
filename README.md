@@ -4,8 +4,7 @@ A hands-on implementation of **Hyperdimensional Computing (HDC)** for semantic t
 
 This project demonstrates how natural-language tea queries can be converted into high-dimensional hypervectors and combined with structured tea metadata and sensory information to retrieve relevant teas.
 
-The project uses:
-
+**Stack:**
 - Python
 - Hyperdimensional Computing (HDC)
 - 10,000-dimensional hypervectors
@@ -17,252 +16,186 @@ The project uses:
 
 ---
 
-# 📌 Project Overview
+## 📌 Project Overview
 
 The goal of this project is to build a tea search system where a user can enter queries such as:
 
-```text
+```
 green tea
 Taiwanese oolong
 floral tea
 fruity tea
 floral fruity Taiwanese oolong
+```
 
 and retrieve relevant teas from a dataset.
 
 The search system combines three main signals:
 
-HDC similarity
-Metadata matching
-Sensory matching
+1. **HDC similarity**
+2. **Metadata matching**
+3. **Sensory matching**
 
 The final ranking is calculated using these signals.
 
-🧠 What is Hyperdimensional Computing?
+---
 
-Hyperdimensional Computing represents information using very large vectors called hypervectors.
+## 🧠 What is Hyperdimensional Computing?
 
-In this project, every hypervector has:
+Hyperdimensional Computing represents information using very large vectors called **hypervectors**.
 
-10,000 dimensions
+In this project, every hypervector has **10,000 dimensions**, for example:
 
-For example:
+```
+[1, -1, 1, 1, -1, ...]   (10,000 values)
+```
 
-[1, -1, 1, 1, -1, ...]
+Instead of representing information using a small number of features, HDC represents information in a very high-dimensional space. This provides useful properties such as:
 
-with 10,000 values.
+- Distributed representation
+- Robustness
+- Similarity-based computation
+- Symbolic operations using vector algebra (binding, bundling)
 
-Instead of representing information using a small number of features, HDC represents information in a very high-dimensional space.
+---
 
-This provides useful properties such as:
+## 🧩 Core HDC Operations
 
-distributed representation
-robustness
-similarity-based computation
-symbolic operations using vector algebra
-binding
-bundling
-🧩 Core HDC Operations
-1. Hypervector
+### 1. Hypervector
 
-A hypervector is the basic representation used by the HDC system.
+A hypervector is the basic representation used by the HDC system:
 
-For example:
+```
+Tea → Hypervector (10,000 dimensions)
+```
 
-Tea
- ↓
-Hypervector
- ↓
-10,000 dimensions
+A tea can have many attributes, each represented as an individual hypervector:
 
-A tea can have many attributes:
+| Attribute | Example value |
+|---|---|
+| class | oolong |
+| country | Taiwan |
+| oxidation | medium |
+| roast | none |
 
-class = oolong
-country = Taiwan
-oxidation = medium
-roast = none
-
-These attributes can be represented using individual hypervectors.
-
-🔗 Binding
+### 2. 🔗 Binding
 
 Binding combines two pieces of information into a new representation.
 
-Conceptually:
+```
+COUNTRY ⊗ TAIWAN  →  "country = Taiwan"
+```
 
+The binding operation allows relationships between values to be represented:
+
+```
+CLASS   ⊗ OOLONG
 COUNTRY ⊗ TAIWAN
-
-produces a new hypervector representing:
-
-country = Taiwan
-
-The binding operation allows relationships between values to be represented.
-
-For example:
-
-CLASS ⊗ OOLONG
-COUNTRY ⊗ TAIWAN
-ROAST ⊗ LIGHT
+ROAST   ⊗ LIGHT
+```
 
 Each produces a different hypervector.
 
-📦 Bundling
+### 3. 📦 Bundling
 
-Bundling combines multiple hypervectors into one representation.
+Bundling combines multiple hypervectors into one representation:
 
-For example:
-
+```
 CLASS ⊗ OOLONG
-+
+  +
 COUNTRY ⊗ TAIWAN
-+
+  +
 ROAST ⊗ LIGHT
-
-can be bundled into a single tea representation.
+  =
+Tea hypervector
+```
 
 Conceptually:
 
+```
 Tea
- |
- +-- class
- +-- country
- +-- oxidation
- +-- roast
- +-- elevation
- +-- sensory information
+ ├── class
+ ├── country
+ ├── oxidation
+ ├── roast
+ ├── elevation
+ └── sensory information
+```
 
 The result is one high-dimensional tea hypervector.
 
-🧠 Tea Hypervector vs Individual Hypervector
+---
 
-An important distinction in this project is:
+## 🧠 Tea Hypervector vs. Individual Hypervector
 
-Individual hypervectors
+**Individual hypervectors** represent single concepts, e.g.:
+`OOLONG`, `TAIWAN`, `GREEN`, `FLORAL`, `FRUITY`, `LIGHT_ROAST`
 
-These represent individual concepts.
+**A tea hypervector** represents the combination of information belonging to one tea. For example, *Li Shan* may encode:
 
-Examples:
+- class = oolong
+- country = Taiwan
+- region = Li Shan
+- oxidation = medium
+- roast = none
+- elevation = 2000m
+- sensory characteristics
 
-OOLONG
-TAIWAN
-GREEN
-FLORAL
-FRUITY
-LIGHT_ROAST
-Tea hypervector
+These individual pieces are combined to create the stored representation for that tea.
 
-A tea hypervector represents the combination of information belonging to one tea.
+---
 
-For example:
+## 🗄️ LanceDB
 
-Li Shan
+The project uses **LanceDB** as the local vector database. The database stores tea records together with their generated hypervectors and metadata.
 
-may contain information related to:
+```
+Tea Dataset → Generate hypervectors → Tea hypervector → LanceDB
+```
 
-class = oolong
-country = Taiwan
-region = Li Shan
-oxidation = medium
-roast = none
-elevation = 2000m
-sensory characteristics
+A record can contain fields such as:
 
-These individual pieces are combined to create the representation stored for that tea.
+- `id`, `title`, `class`, `country`, `region`
+- `oxidation`, `roast`, `aroma`, `taste`, `elevation`
+- `hypervector`
 
-🗄️ LanceDB
+> **Note:** The project stores **both** the tea metadata *and* the tea hypervector — not metadata alone. The `hypervector` column holds the full binding/bundling result for each tea.
 
-The project uses LanceDB as the local vector database.
+---
 
-The database stores the tea records together with their generated hypervectors and metadata.
+## 🔄 Overall Data Flow
 
-Conceptually:
+**Indexing pipeline:**
 
+```
 Tea Dataset
-     |
-     ↓
-Generate hypervectors
-     |
-     ↓
-Tea hypervector
-     |
-     ↓
-LanceDB
+  → Data Loading
+  → Text / Attribute Encoding
+  → Individual Hypervectors
+  → Binding
+  → Bundling
+  → Tea Hypervector
+  → Store (metadata + hypervector) in LanceDB
+```
 
-A record can contain information such as:
+**Query pipeline:**
 
-id
-title
-class
-country
-region
-oxidation
-roast
-aroma
-taste
-elevation
-hypervector
-
-The database therefore stores both:
-
-tea information
-its numerical hypervector representation
-🔄 Overall Data Flow
-
-The complete pipeline is approximately:
-
-Tea Dataset
-     |
-     ↓
-Data Loading
-     |
-     ↓
-Text / Attribute Encoding
-     |
-     ↓
-Individual Hypervectors
-     |
-     ↓
-Binding
-     |
-     ↓
-Bundling
-     |
-     ↓
-Tea Hypervector
-     |
-     ↓
-LanceDB
-
-For a search query:
-
+```
 User Query
-     |
-     ↓
-Query Parser
-     |
-     ├── Metadata
-     |
-     └── Sensory terms
-     |
-     ↓
-Text → Hypervector
-     |
-     ↓
-Compare with stored tea hypervectors
-     |
-     ↓
-HDC similarity
-     +
-Metadata score
-     +
-Sensory score
-     |
-     ↓
-Final ranking
-     |
-     ↓
-Top K teas
-📁 Project Structure
+  → Query Parser ──┬── Metadata
+                    └── Sensory terms
+  → Text → Hypervector
+  → Compare with stored tea hypervectors
+  → HDC similarity + Metadata score + Sensory score
+  → Final ranking
+  → Top K teas
+```
+
+---
+
+## 📁 Project Structure
+
+```
 tea-hdc/
 │
 ├── data/
@@ -287,694 +220,300 @@ tea-hdc/
 ├── pyproject.toml
 │
 └── README.md
-📂 Important Files
-data_loader.py
+```
 
-Responsible for loading the tea dataset.
+---
 
-The dataset contains information such as:
+## 📂 Important Files
 
-id
-source_url
-image
-class
-title
-description
-country
-region
-oxidation
-roast
-aroma
-taste
-elevation_meters
-elevation_confidence
-embeddings.py
+| File | Purpose |
+|---|---|
+| `data_loader.py` | Loads the tea dataset (id, source_url, image, class, title, description, country, region, oxidation, roast, aroma, taste, elevation_meters, elevation_confidence). |
+| `embeddings.py` | Converts text into vector representations — e.g. turns `"floral fruity Taiwanese oolong"` into a 10,000-dimensional query hypervector. |
+| `hypervectors.py` | Core HDC operations — the mathematical representation of hypervectors, binding, and bundling. |
+| `encoder.py` | Encodes tea attributes into hypervectors: attributes → individual hypervectors → binding/bundling → tea hypervector. |
+| `build_hypervectors.py` | Builds the hypervector representation for the full dataset (read tea → encode attributes → create tea hypervector → store result). |
+| `query_parser.py` | Extracts structured information from natural-language queries (see example below). |
+| `query_search.py` | Main natural-language search program; combines HDC similarity, metadata matching, and sensory matching into a final ranking. |
 
-Responsible for converting text into vector representations.
-
-The query:
-
-floral fruity Taiwanese oolong
-
-is converted into a 10,000-dimensional query hypervector.
-
-Example output:
-
+**Example — `embeddings.py` output:**
+```
 Generating query hypervector...
 Query hypervector shape: (10000,)
-hypervectors.py
+```
 
-Contains the fundamental HDC hypervector operations.
+**Example — `query_parser.py` on `"floral fruity Taiwanese oolong"`:**
+```
+class:   oolong
+country: Taiwan
+sensory: [floral, fruity]
+```
 
-This is where the mathematical representation of hypervectors and operations such as binding/bundling are handled.
+---
 
-encoder.py
+## ⚙️ Installation
 
-Responsible for encoding tea information into hypervectors.
+### 1. Clone the repository
 
-Conceptually:
-
-Tea attributes
-      |
-      ↓
-Encode attributes
-      |
-      ↓
-Individual hypervectors
-      |
-      ↓
-Binding / Bundling
-      |
-      ↓
-Tea hypervector
-build_hypervectors.py
-
-Builds the hypervector representation for the dataset.
-
-The general process is:
-
-Dataset
-   ↓
-Read tea
-   ↓
-Encode attributes
-   ↓
-Create tea hypervector
-   ↓
-Store result
-query_parser.py
-
-Extracts structured information from natural-language queries.
-
-For example:
-
-floral fruity Taiwanese oolong
-
-becomes:
-
-class:
-    oolong
-
-country:
-    Taiwan
-
-sensory:
-    floral
-    fruity
-query_search.py
-
-This is the main natural-language search program.
-
-It combines:
-
-HDC similarity
-Metadata matching
-Sensory matching
-
-and produces the final ranking.
-
-⚙️ Installation
-1. Clone the repository
+```bash
 git clone <your-repository-url>
-
-Move into the project:
-
 cd tea-hdc
-🐍 Python Environment
+```
 
-This project uses uv.
+### 2. Python environment (`uv`)
 
-What is uv?
+This project uses [`uv`](https://github.com/astral-sh/uv), a fast Python package and project management tool. It manages Python environments, dependencies, package installation, and running commands — replacing the usual `python -m venv .venv` + `pip install ...` workflow.
 
-uv is a fast Python package and project management tool.
+### 3. Install dependencies
 
-It can manage:
-
-Python environments
-dependencies
-package installation
-running Python commands
-
-Instead of manually doing:
-
-python -m venv .venv
-
-and then:
-
-pip install ...
-
-the project can use:
-
-uv
-
-to manage the environment and dependencies.
-
-📦 Install Dependencies
-
-After entering the project:
-
+```bash
 uv sync
+```
 
 This reads the project configuration and installs the required dependencies.
 
-▶️ Running the Project
+### 4. Run the project
 
-The project uses:
-
-uv run python
-
-For example:
-
+```bash
 uv run python src/query_search.py --query "green tea" --limit 5
+```
 
-This runs the Python program inside the project's managed environment.
+This runs the program inside the project's managed environment.
 
-🔎 Example Queries
-Green tea
+---
+
+## 🔎 Example Queries
+
+| Query | Parsed as |
+|---|---|
+| `"green tea"` | `class: green` |
+| `"oolong tea"` | `class: oolong` |
+| `"Taiwanese oolong"` | `class: oolong`, `country: Taiwan` |
+| `"floral tea"` | `sensory: [floral]` |
+| `"fruity tea"` | `sensory: [fruity]` |
+| `"floral fruity Taiwanese oolong"` | `class: oolong`, `country: Taiwan`, `sensory: [floral, fruity]` |
+
+```bash
 uv run python src/query_search.py --query "green tea" --limit 5
-
-Example result:
-
-Detected query metadata:
-  class: green
-
-The system detects:
-
-green
-
-as the tea class.
-
-Oolong Tea
 uv run python src/query_search.py --query "oolong tea" --limit 5
-
-The parser detects:
-
-class: oolong
-Taiwanese Oolong
 uv run python src/query_search.py --query "Taiwanese oolong" --limit 5
-
-The query is interpreted as:
-
-class: oolong
-country: Taiwan
-
-This allows metadata matching to improve the ranking.
-
-Floral Tea
 uv run python src/query_search.py --query "floral tea" --limit 5
-
-The query parser detects:
-
-sensory:
-    floral
-
-The system then examines the tea's aroma and taste information.
-
-Fruity Tea
 uv run python src/query_search.py --query "fruity tea" --limit 5
-
-The parser detects:
-
-sensory:
-    fruity
-Complex Query
 uv run python src/query_search.py \
     --query "floral fruity Taiwanese oolong" \
     --limit 5
+```
 
-The system detects:
+The complex query combines **semantic information + structured metadata + sensory characteristics**.
 
-class: oolong
-country: Taiwan
-sensory:
-    floral
-    fruity
+---
 
-This is an example of combining:
+## 📊 Understanding the Search Score
 
-semantic information
-+
-structured metadata
-+
-sensory characteristics
-📊 Understanding the Search Score
+The search produces three component scores.
 
-The search produces three important scores.
+### 1. HDC Similarity
 
-1. HDC Similarity
-
-Example:
-
+```
 HDC similarity: 0.0118
+```
 
-This measures how similar the query hypervector is to the tea hypervector.
+Measures how similar the query hypervector is to a tea hypervector, using **cosine similarity**. Higher similarity means the vectors are more aligned.
 
-The project uses cosine similarity.
+### 2. Metadata Score
 
-Conceptually:
-
-Query Hypervector
-        |
-        | cosine similarity
-        ↓
-Tea Hypervector
-
-Higher similarity means the vectors are more aligned.
-
-2. Metadata Score
-
-Example:
-
+```
 Metadata score: 1.00
+```
 
-For:
+For `"Taiwanese oolong"`, the system expects `class = oolong` and `country = Taiwan`. If a tea satisfies both, metadata score = 1.00.
 
-Taiwanese oolong
+### 3. Sensory Score
 
-the system expects:
-
-class = oolong
-country = Taiwan
-
-If a tea satisfies both:
-
-oolong ✓
-Taiwan ✓
-
-then:
-
-Metadata score = 1.00
-3. Sensory Score
-
-Example:
-
+```
 Sensory score: 1.00
+```
 
-For:
+For `"floral fruity"`, the system checks the tea's `aroma` and `taste` fields for matching sensory terms, grouped by concept:
 
-floral fruity
+- **Floral-related:** floral, flower, lavender, jasmine, orchid, rose
+- **Fruity-related:** fruity, fruit, peach, apple, berry, citrus
 
-the system checks the tea's:
+If both requested sensory groups are found, sensory score = 1.00.
 
-aroma
-taste
+### 🧮 Final Score
 
-and searches for matching sensory terms.
+```
+Final Score = 0.30 × HDC similarity
+            + 0.50 × Metadata score
+            + 0.20 × Sensory score
+```
 
-For example, floral-related terms can include:
+The result is used to rank the teas.
 
-floral
-flower
-lavender
-jasmine
-orchid
-rose
+---
 
-Fruity-related terms can include:
+## 🧪 Example Output
 
-fruity
-fruit
-peach
-apple
-berry
-citrus
+For the query `"floral fruity Taiwanese oolong"`:
 
-If both requested sensory groups are found:
-
-floral ✓
-fruity ✓
-
-then:
-
-Sensory score = 1.00
-🧮 Final Score
-
-The current implementation calculates:
-
-Final Score =
-    0.30 × HDC similarity
-  + 0.50 × Metadata score
-  + 0.20 × Sensory score
-
-Therefore:
-
-Final Score =
-    HDC contribution
-    +
-    Metadata contribution
-    +
-    Sensory contribution
-
-The result is then used to rank the teas.
-
-🧪 Example Output
-
-For:
-
-floral fruity Taiwanese oolong
-
-the system can produce:
-
+```
 Detected query metadata:
   class: oolong
   country: Taiwan
   sensory: ['floral', 'fruity']
-
-Example:
 
 score     HDC       metadata   sensory   class     title
 ----------------------------------------------------------------
 0.7035    0.0118    1.00       1.00      oolong    Gui Fei
 0.7027    0.0091    1.00       1.00      oolong    Ali Shan - Roasted
 0.7019    0.0062    1.00       1.00      oolong    Dong Ding - Charcoal roasted
+```
 
-The first result has:
+For the top result:
+```
+0.30 × 0.0118 + 0.50 × 1.00 + 0.20 × 1.00 ≈ 0.7035
+```
 
-HDC similarity = 0.0118
-Metadata score = 1.00
-Sensory score = 1.00
+### 🔬 Why HDC Similarity Can Be Small
 
-Therefore:
+A small value like `HDC similarity = 0.0118` is **not a failure** — the final ranking isn't based on HDC similarity alone. It's combined with metadata and sensory scores:
 
-0.30 × 0.0118
-+
-0.50 × 1.00
-+
-0.20 × 1.00
+- For structured queries like `"Taiwanese oolong"`, **metadata** contributes strongly.
+- For sensory queries like `"floral tea"`, **sensory matching** becomes important.
 
-which produces approximately:
+---
 
-0.7035
-🔬 Why HDC Similarity Can Be Small
+## 🧠 Complete Search Pipeline (Worked Example)
 
-It is important not to interpret:
+For the query `"floral fruity Taiwanese oolong"`:
 
-HDC similarity = 0.0118
+1. **Query** — `"floral fruity Taiwanese oolong"`
+2. **Generate query hypervector** — text → embedding → 10,000-dimensional hypervector
+3. **Parse query** — `class = oolong`, `country = Taiwan`, `sensory = [floral, fruity]`
+4. **Load LanceDB** — load tea records and stored hypervectors
+5. **Calculate HDC similarity** — cosine similarity between query hypervector and each tea hypervector
+6. **Calculate metadata score** — check class, country, roast, oxidation as specified by the query
+7. **Calculate sensory score** — search aroma/taste for the requested sensory characteristics
+8. **Calculate final score** — `0.30×HDC + 0.50×Metadata + 0.20×Sensory`
+9. **Sort** — highest score to lowest
+10. **Return Top K** — e.g. `--limit 5` returns the five highest-ranked teas
 
-as a failure.
+---
 
-The final ranking is not based only on HDC similarity.
+## 🧪 Dataset
 
-The system combines:
+The project currently works with a tea dataset containing approximately **166 teas**.
 
-HDC
-+
-metadata
-+
-sensory information
+**Tea classes:** black, green, oolong, white, yellow
 
-For structured queries such as:
+**Fields include:** country, region, oxidation, roast, aroma, taste, elevation
 
-Taiwanese oolong
+---
 
-metadata can contribute strongly to the final ranking.
+## 🔬 Sensory Search
 
-For sensory queries such as:
+Sensory information comes primarily from the `aroma` and `taste` fields. For example, a tea's aroma might include:
 
-floral tea
+```
+apple blossom
+honeysuckle
+fresh apricot
+wild berries
+lemon zest
+```
 
-sensory matching becomes important.
+A query like `"fruity tea"` can match terms such as: fruit, peach, apple, berry, citrus. The project groups related sensory words together into concept clusters.
 
-🧠 Complete Search Pipeline
+---
 
-Suppose the user enters:
+## 🎯 Current Project Goal
 
-floral fruity Taiwanese oolong
-Step 1 — Query
-floral fruity Taiwanese oolong
-Step 2 — Generate query hypervector
-text
- ↓
-embedding
- ↓
-10,000-dimensional hypervector
-Step 3 — Parse query
+The primary purpose of this project is **educational and experimental** — demonstrating how:
 
-The parser identifies:
-
-class = oolong
-country = Taiwan
-sensory = floral, fruity
-Step 4 — Load LanceDB
-
-The system loads the tea records and their stored hypervectors.
-
-Step 5 — Calculate HDC similarity
-
-For every tea:
-
-query hypervector
-        ↓
-cosine similarity
-        ↓
-tea hypervector
-Step 6 — Calculate metadata score
-
-Check:
-
-class
-country
-roast
-oxidation
-
-depending on what the query specifies.
-
-Step 7 — Calculate sensory score
-
-Search:
-
-aroma
-taste
-
-for the requested sensory characteristics.
-
-Step 8 — Calculate final score
-Final =
-0.30 × HDC
-+
-0.50 × Metadata
-+
-0.20 × Sensory
-Step 9 — Sort
-
-Results are sorted from highest score to lowest score.
-
-Step 10 — Return Top K
-
-If:
-
---limit 5
-
-the system returns the five highest-ranked teas.
-
-🧪 Dataset
-
-The project currently works with a tea dataset containing approximately:
-
-166 teas
-
-Tea classes include:
-
-black
-green
-oolong
-white
-yellow
-
-The dataset also contains information such as:
-
-country
-region
-oxidation
-roast
-aroma
-taste
-elevation
-🔬 Sensory Search
-
-Sensory information comes primarily from:
-
-aroma
-taste
-
-For example, a tea may contain:
-
-Aroma:
-    apple blossom
-    honeysuckle
-    fresh apricot
-    wild berries
-    lemon zest
-
-The query:
-
-fruity tea
-
-can therefore match terms such as:
-
-fruit
-peach
-apple
-berry
-citrus
-
-The project groups related sensory words together.
-
-🎯 Current Project Goal
-
-The primary purpose of this project is educational and experimental.
-
-It demonstrates how:
-
+```
 Natural Language
-       ↓
-Hypervector Representation
-       ↓
-HDC Similarity
-       +
-Structured Metadata
-       +
-Sensory Matching
-       ↓
-Ranked Search Results
+   → Hypervector Representation
+   → HDC Similarity + Structured Metadata + Sensory Matching
+   → Ranked Search Results
+```
 
 can be implemented using Hyperdimensional Computing.
 
-🚫 What This Project Does Not Currently Focus On
+### 🚫 Out of Scope (for now)
 
-The current implementation intentionally focuses on understanding the HDC pipeline rather than building a production application.
+- Web UI
+- Mobile application
+- Authentication
+- Cloud deployment
+- Production API
+- Large-scale distributed databases
+- Advanced ranking models
 
-It does not currently focus on:
+The primary objective is understanding and implementing the underlying HDC concepts, not building a production application.
 
-Web UI
-Mobile application
-Authentication
-Cloud deployment
-Production API
-Large-scale distributed databases
-Advanced ranking models
+---
 
-The primary objective is to understand and implement the underlying HDC concepts.
+## 📚 Concepts Demonstrated
 
-📚 Concepts Demonstrated
+- Hyperdimensional Computing & hypervectors
+- High-dimensional representations
+- Vector / cosine similarity
+- Text embeddings
+- Binding & bundling
+- Symbolic representation
+- Metadata matching
+- Sensory matching
+- Natural-language query parsing
+- Vector databases (LanceDB)
+- Retrieval and ranking
+- Python environment management with `uv`
 
-This project provides hands-on implementation of:
+---
 
-Hyperdimensional Computing
-Hypervectors
-High-dimensional representations
-Vector similarity
-Cosine similarity
-Text embeddings
-Binding
-Bundling
-Symbolic representation
-Metadata matching
-Sensory matching
-Natural-language query parsing
-Vector databases
-LanceDB
-Retrieval and ranking
-Python environment management with uv
-🚀 Future Improvements
+## 🚀 Future Improvements
 
-Possible future improvements include:
-
+```
 Better sensory embeddings
-        ↓
-Better semantic similarity
-        ↓
-Improved ranking
-        ↓
-More natural-language queries
-        ↓
-Larger tea dataset
-        ↓
-HDC associative memory
-        ↓
-More advanced retrieval
+   → Better semantic similarity
+   → Improved ranking
+   → More natural-language queries
+   → Larger tea dataset
+   → HDC associative memory
+   → More advanced retrieval
+```
 
 Other possible experiments:
 
-Compare HDC search with traditional vector search
-Experiment with different hypervector dimensions
-Test different embedding models
-Experiment with HDC similarity
-Improve sensory concept encoding
-Evaluate retrieval accuracy
-Add query evaluation metrics
-🧑‍💻 Learning Objective
+- Compare HDC search with traditional vector search
+- Experiment with different hypervector dimensions
+- Test different embedding models
+- Improve sensory concept encoding
+- Evaluate retrieval accuracy
+- Add query evaluation metrics
+
+---
+
+## 🧑‍💻 Learning Objective
 
 The main learning objective is to understand the complete flow:
 
-DATA
- ↓
-ENCODING
- ↓
-HYPERVECTORS
- ↓
-BINDING
- ↓
-BUNDLING
- ↓
-TEA REPRESENTATION
- ↓
-LANCEDB
- ↓
-QUERY
- ↓
-QUERY HYPERVECTOR
- ↓
-SIMILARITY
- ↓
-METADATA MATCHING
- ↓
-SENSORY MATCHING
- ↓
-FINAL RANKING
+```
+DATA → ENCODING → HYPERVECTORS → BINDING → BUNDLING
+     → TEA REPRESENTATION → LANCEDB
+     → QUERY → QUERY HYPERVECTOR
+     → SIMILARITY → METADATA MATCHING → SENSORY MATCHING
+     → FINAL RANKING
+```
 
-This project is intended to make the concepts of Hyperdimensional Computing concrete through a working implementation rather than only theoretical examples.
+This project is intended to make the concepts of Hyperdimensional Computing concrete through a working implementation, rather than only theoretical examples.
 
-📜 License
+---
 
-Add your preferred license here.
+## 📜 License
 
-For example:
+MIT License *(add your preferred license here)*
 
-MIT License
-👤 Author
+## 👤 Author
 
-Harini
-
-A hands-on learning project exploring:
-
-Hyperdimensional Computing
-+
-Vector Representations
-+
-Semantic Search
-
-### One important correction to what we discussed earlier
-
-Your current project **does store the hypervector in LanceDB**. It isn't storing only the tea metadata. Your output/code shows a `hypervector` column, so the conceptual flow is:
-
-```text
-Individual hypervectors
-        ↓
-Binding + Bundling
-        ↓
-Tea hypervector
-        ↓
-Store tea metadata + tea hypervector
-        ↓
-LanceDB
-
-Then at search time:
-
-User query
-    ↓
-Query hypervector
-    ↓
-Compare against stored tea hypervectors
-    ↓
-HDC similarity
+**Harini** — a hands-on learning project exploring Hyperdimensional Computing, vector representations, and semantic search.
