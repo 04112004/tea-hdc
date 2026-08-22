@@ -512,8 +512,8 @@ This project is intended to make the concepts of Hyperdimensional Computing conc
 
 ## 📜 License
 
-MIT License *(add your preferred license here)*
+This project is currently unlicensed.
 
 ## 👤 Author
 
-**Harini** — a hands-on learning project exploring Hyperdimensional Computing, vector representations, and semantic search.
+**Harini P** — a hands-on learning project exploring Hyperdimensional Computing, vector representations, and semantic search.
