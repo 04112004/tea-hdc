@@ -1,0 +1,32 @@
+[project]
+name = "tea-hdc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Harini", email = "harini.p@innoura.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "datasets>=5.0.1",
+    "lancedb>=0.37.1",
+    "numpy>=2.5.2",
+    "ollama>=0.6.2",
+    "pandas>=3.0.5",
+    "pillow>=12.3.0",
+    "pyarrow>=25.0.1",
+    "pylance>=10.0.0",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+tea-hdc = "tea_hdc:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
